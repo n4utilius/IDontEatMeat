@@ -204,7 +204,7 @@ db.connect()
 
 insert_in_database( 44973121, 995, "just python5", datetime.datetime.now() )
 
-new_target = Target(twitter, db, t.get_keys()[i]["screen_name"])
+new_target = Target(twitter, db, t.get_screen_name() )
 new_target.send_tweet_to_recruited()
 
 #print( new_target.get_hashtags() )
