@@ -1,11 +1,12 @@
-import retrive_twitter_info
-
 from peewee import *
 from create_recruited_database import Recruited, Tweets, Hashtag, SentDate
 import datetime, time
+from tw import Tw
 
+import tweepy
+import retrive_twitter_info
 
-class target:
+class Target:
     def __init__(self, twitter, db, user):
         self.twitter = twitter
         self.db = db
@@ -33,7 +34,7 @@ class target:
         """
         count = 1;
         for item in hashtag_list:
-            print("{}:{}".format(count, item))
+            print("{}: {}".format(count, item))
             count += 1
 
     def retrieve_users(self, target_hashtag_idx, the_hashtags):
@@ -56,10 +57,10 @@ class target:
         print(users_list)
         selected_user = []
         # this query selects the datetime of the users that where retrieved with the last query (users who tweeted certain hashtag)
+        print("selected users")
         for item in users_list:
             selected_user = SentDate.select(SentDate.user_sent, SentDate.date_tweet_sent, SentDate.tweet_sent_message).where(SentDate.user_sent == item)
             # if the user has been sent a tweet in the last 24 hours skip it
-            print("selected users")
             for item in selected_user:
                 print(item.user_sent_id)
             for item in selected_user:
@@ -92,16 +93,17 @@ class target:
         :return: the constructed tweet
 
         """
-
+        print(message)
         tweets = {}
         print(list_of_users)
         counter = 1
         print("Constructing tweets")
+
         for item in list_of_users:
             if counter < 25:
-                string_name =twitter.get_screen_name(item)
+                string_name = self.twitter.get_screen_name(item)
                 print(string_name)
-                tweets[item]='@' + string_name + ' ' + message
+                tweets[item]='@' + str(string_name) + ' ' + str(message)
                 print(type(tweets))
                 print(tweets[item])
                 counter +=1
@@ -129,12 +131,10 @@ class target:
 
             print (k , 'corresponds to', v)
             # print(tweet_only)
-
-
-            twitter.api.update_status(status=v)
+            self.twitter.api.update_status(status= str(v))
             time.sleep(600)
-            self.save_tweet_data(k,v)
-            # print "Tweeting!"
+            self.save_tweet_data(k, str(v))
+            print "Tweeting!"
 
     def save_tweet_data(self, k,v):
         # Get id of the user
@@ -166,21 +166,19 @@ class target:
     def send_tweet_to_recruited(self):
         # retrieve all the hashtags from database
         the_hashtags = self.get_hashtags()
-        print(the_hashtags)
         # show menu and
         self.show_menu(the_hashtags)
         # Ask for the hashtag to target
-        target = input("Which hashtag do you want to target: ")
-        # get targeted hashtag
-        target_hashtag_idx = int(target)
+        target_hashtag_idx = int(input("Which hashtag do you want to target: "))
+
         # get list of users according to hashtag
         recruited = self.retrieve_users(target_hashtag_idx, the_hashtags)
-        print('recruited', recruited)
-        if  recruited:
-            message = input("Write the tweet you want do send: ")
+        if recruited:
+            message = raw_input("Write the tweet you want do send: ")
+            print(message)
             contructed_tweet = self.construct_tweet(recruited, message)
             print(contructed_tweet)
-            send = input('Are you sure you want to send them? Y=yes, N=no: ')
+            send = raw_input('Are you sure you want to send them? Y=yes, N=no: ')
             if send.lower() == 'y':
                 self.send_tweet(contructed_tweet)
             else:
@@ -194,17 +192,19 @@ class target:
             exit()
 
 def insert_in_database(user, id_tweet, message, date):
-    query_user = SentDate.create(user_sent=user, tweet_sent_message=message,
-                                 date_tweet_sent=date)
+    query_user = SentDate.create(user_sent= user, tweet_sent_message= message,
+                                 date_tweet_sent= date)
     query_user.save()
 
+t = Tw()
+twitter, i = t.select_account()
 
-user, ck, cs, at, atc = [line.rstrip('\n') for line in open('my_twitter_info.txt', 'r')]
-print("the user is", user)
-twitter = retrive_twitter_info.GetTwitterInfo(ck, cs, at, atc, user)
-print("antes de procesar archivo")
 db = SqliteDatabase('recruited.db')
 db.connect()
-# insert_in_database(44973121,995,"just python5",datetime.datetime.now())
-new_target = target(twitter, db, user)
+
+insert_in_database( 44973121, 995, "just python5", datetime.datetime.now() )
+
+new_target = Target(twitter, db, t.get_keys()[i]["screen_name"])
 new_target.send_tweet_to_recruited()
+
+#print( new_target.get_hashtags() )

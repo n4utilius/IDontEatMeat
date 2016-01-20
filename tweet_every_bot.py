@@ -1,13 +1,12 @@
-from keys2 import keys
 from tw import Tw
 
-def send_tweet(tweet, keys): 
+def send_tweet(tweet): 
   try:
     publish = raw_input("Publish? [Y]es  to publish [N]o to pass or [E]xit to exit ")
     
     if publish.lower() == 'y':
-      t = Tw(keys)
-      for key in keys: t.login(key).api.update_status(status=str(tweet))
+      t = Tw()
+      for key in t.get_keys(): t.login(key).api.update_status(status=str(tweet))
     
     elif publish.lower() == 'n': pass
     
@@ -16,5 +15,5 @@ def send_tweet(tweet, keys):
   except IndexError:
     pass
 
-tweet = raw_input("What do you want to tweet every bot ?")
-send_tweet(tweet, keys)
+tweet = raw_input("What do you want to tweet every bot? ")
+send_tweet(tweet)
